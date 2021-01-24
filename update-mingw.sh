@@ -84,14 +84,24 @@ for d in ${args[@]}/ ; do
   echo $PKG_NAME
   MINGW_VERSION=$(sed '/^pkgver=/!d; s/pkgver=//' PKGBUILD)
   echo $MINGW_VERSION
-  LAST_VERSION=$(lastversion --at pip ${PKG_NAME})
+  if ! LAST_VERSION=$(lastversion --at pip ${PKG_NAME})
+    LAST_VERSION=$(lastversion --at pip python-${PKG_NAME})
+  fi
   echo $LAST_VERSION
   if [ $MINGW_VERSION != $LAST_VERSION ];
   then
     sed -i "s/^pkgver=.*/pkgver=${LAST_VERSION}/g" PKGBUILD
     sed -i "s/^pkgrel=.*/pkgrel=1/g" PKGBUILD
-    updpkgsums
-    MINGW_INSTALLS=mingw64 makepkg-mingw -sLf
+    if ! updpkgsums
+      echo "Failed to update checksums for $PKG_NAME"
+      git restore PKGBUILD
+      continue
+    fi
+    if ! MINGW_INSTALLS=mingw64 makepkg-mingw -sLf
+      echo "Failed to build $PKG_NAME"
+      git restore PKGBUILD
+      continue
+    fi
     git checkout -b ${PKG_NAME}-${LAST_VERSION}
     git add PKGBUILD
     git commit -m "Update ${PKG_NAME} to version ${LAST_VERSION}"
