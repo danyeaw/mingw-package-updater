@@ -97,7 +97,7 @@ for d in ${args[@]}/ ; do
       git restore PKGBUILD
       continue
     fi
-    if ! MINGW_INSTALLS=mingw64 makepkg-mingw -sLf
+    if ! MINGW_INSTALLS=mingw64 makepkg-mingw -sLf --noconfirm
       echo "Failed to build $PKG_NAME"
       git restore PKGBUILD
       continue
