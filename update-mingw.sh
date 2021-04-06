@@ -73,6 +73,7 @@ parse_params() {
 parse_params "$@"
 setup_colors
 
+export MINGW_INSTALLS=mingw64
 echo "Pulling git master"
 git checkout master
 git pull upstream master
@@ -80,26 +81,26 @@ git pull upstream master
 for d in ${args[@]}/ ; do
   echo "Checking version in ${d}" 
   cd ${d}
-  PKG_NAME=$(sed '/^_realname=/!d; s/_realname=//' PKGBUILD)
+  PKG_NAME=$(sed '/^_realname=/!d; s/_realname=//' PKGBUILD) || PKG_NAME=$(sed '/^_pyname=/!d; s/_pyname=//' PKGBUILD)
   echo $PKG_NAME
   MINGW_VERSION=$(sed '/^pkgver=/!d; s/pkgver=//' PKGBUILD)
   echo $MINGW_VERSION
-  if ! LAST_VERSION=$(lastversion --at pip ${PKG_NAME})
-    LAST_VERSION=$(lastversion --at pip python-${PKG_NAME})
-  fi
+  LAST_VERSION=$(lastversion --at pip ${PKG_NAME}) || LAST_VERSION=$(lastversion --at pip python-${PKG_NAME})
   echo $LAST_VERSION
   if [ $MINGW_VERSION != $LAST_VERSION ];
   then
     sed -i "s/^pkgver=.*/pkgver=${LAST_VERSION}/g" PKGBUILD
     sed -i "s/^pkgrel=.*/pkgrel=1/g" PKGBUILD
-    if ! updpkgsums
+    if ! updpkgsums; then
       echo "Failed to update checksums for $PKG_NAME"
       git restore PKGBUILD
+      cd ..
       continue
     fi
-    if ! MINGW_INSTALLS=mingw64 makepkg-mingw -sLf --noconfirm
+    if ! makepkg-mingw -sLf; then
       echo "Failed to build $PKG_NAME"
       git restore PKGBUILD
+      cd ..
       continue
     fi
     git checkout -b ${PKG_NAME}-${LAST_VERSION}
