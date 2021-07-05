@@ -73,7 +73,7 @@ parse_params() {
 parse_params "$@"
 setup_colors
 
-export MINGW_INSTALLS=mingw64
+export MINGW_ARCH=mingw64
 echo "Pulling git master"
 git checkout master
 git pull upstream master
@@ -81,7 +81,7 @@ git pull upstream master
 for d in ${args[@]}/ ; do
   echo "Checking version in ${d}" 
   cd ${d}
-  PKG_NAME=$(sed '/^_realname=/!d; s/_realname=//' PKGBUILD) || PKG_NAME=$(sed '/^_pyname=/!d; s/_pyname=//' PKGBUILD)
+  PKG_NAME=$(sed '/^_pyname=/!d; s/_pyname=//' PKGBUILD) || PKG_NAME=$(sed '/^_realname=/!d; s/_realname=//' PKGBUILD)
   echo $PKG_NAME
   MINGW_VERSION=$(sed '/^pkgver=/!d; s/pkgver=//' PKGBUILD)
   echo $MINGW_VERSION
@@ -97,7 +97,7 @@ for d in ${args[@]}/ ; do
       cd ..
       continue
     fi
-    if ! makepkg-mingw -sLf; then
+    if ! makepkg-mingw -sLf --needed --noconfirm; then
       echo "Failed to build $PKG_NAME"
       git restore PKGBUILD
       cd ..
